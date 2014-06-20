@@ -4,7 +4,7 @@
  * <p>ThrowsSpamAway</p> Class
  * WordPress's Plugin
  * @author Takeshi Satoh@GTI Inc. 2014
- * @version 2.6.3
+ *
  */
 class ThrowsSpamAway {
 
@@ -224,11 +224,17 @@ class ThrowsSpamAway {
 		// 元画面へ戻るタイム計算
 		$back_time = ( (int) get_option( 'tsa_back_second', $default_back_second ) ) * 1000;
 		// タイム値が０なら元画面へそのままリダイレクト
+//		if ( $back_time == 0 ) {
+//			header( 'Location:'.$_SERVER['HTTP_REFERER'] );
+//			die;
+//		} else {
+//			wp_die( __( $error_msg.'<script type="text/javascript">window.setTimeout(location.href=\''.$_SERVER['HTTP_REFERER'].'\', '.$back_time.');</script>', 'throws-spam-away' ) );
+//		}
 		if ( $back_time == 0 ) {
-			header( 'Location:'.$_SERVER['HTTP_REFERER'] );
+			header( 'Location:'.esc_url($_SERVER['HTTP_REFERER']) );
 			die;
 		} else {
-			wp_die( __( $error_msg.'<script type="text/javascript">window.setTimeout(location.href=\''.$_SERVER['HTTP_REFERER'].'\', '.$back_time.');</script>', 'throws-spam-away' ) );
+			wp_die( __( esc_attr($error_msg).'<script type="text/javascript">window.setTimeout(function(){location.href=\''.esc_url($_SERVER['HTTP_REFERER']).'\'}, '.esc_attr($back_time).');</script>', 'throws-spam-away' ) );
 		}
 	}
 
@@ -1046,6 +1052,14 @@ function addIpAddresses(newAddressStr) {
 			return NULL;
 		}
 		// 最終コメント情報取得
+/**		$results = $wpdb->get_results(
+				"SELECT D.cnt as cnt,E.ip_address as ip_address, D.ppd as post_date, E.error_type as error_type, E.author as author, E.comment as comment FROM
+				((select count(ip_address) as cnt, ip_address, max(post_date) as ppd, error_type, author, comment from $this->table_name
+				WHERE post_date >= '". gmdate( 'Y-m-d', current_time( 'timestamp' ) - 86400 * $gdays )."'
+				GROUP BY ip_address) as D INNER JOIN $this->table_name as E ON D.ip_address = E.ip_address AND D.ppd = E.post_date)
+				ORDER BY post_date DESC"
+			);
+*/
 		$qry_str = "SELECT A.post_date, A.post_id, B.error_type, B.author as spam_author, B.comment as spam_comment FROM  $this->table_name as A
 					INNER JOIN $this->table_name as B ON A.ip_address = B.ip_address AND A.post_date = B.post_date
 					WHERE A.ip_address = '".htmlspecialchars( $ip_address )."' ORDER BY A.post_date DESC LIMIT 1 ";
